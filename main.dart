@@ -1,21 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:o1loginsignupphp/ui/login.dart';
+import 'package:o1loginsignupphp/ui/signup.dart';
 
-Widget TextFieldUi(lbltext, hnttxt, icn, obstxt) {
-  return TextField(
-    obscureText: obstxt,
-    style: TextStyle(color: Colors.white.withOpacity(0.5)),
-    decoration: InputDecoration(
-      labelText: lbltext,
-      fillColor: Colors.black.withOpacity(0.3),
-      filled: true,
-      prefixIcon: Icon(
-        icn,
-        color: Colors.grey.withOpacity(0.5),
-      ),
-      hintText: hnttxt,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ),
-  );
+void main() {
+  runApp(const MyApp());
 }
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(
+        hintColor: Colors.grey.withOpacity(0.7),
+      ),
+      debugShowCheckedModeBanner: false,
+         home: const MyHomePage(),
+    );
+  }
+}
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.blue.shade300,
+      body: loginpageui(),
+    );
+  }
+}
+
+
