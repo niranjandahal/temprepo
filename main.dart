@@ -1,68 +1,196 @@
-import 'dart:io';
+import 'package:flutter/material.dart';
 
-import 'package:flutter/cupertino.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import '../services/NoteDbHelper.dart';
+import 'descriptionnote.dart';
 
-class NoteDbHelper {
-  static const dbname = 'notes.db';
-  static const dvversion = 1;
-  static const tablename = 'notes';
-  static const colid = 'id';
-  static const coltittle = 'title';
-  static const coldescription = 'description';
-  static const coldate = 'date';
+class NoteHomeUI extends StatefulWidget {
+  const NoteHomeUI({super.key});
 
-  static final NoteDbHelper instance = NoteDbHelper();
-  static Database? niranjandb;
+  @override
+  State<NoteHomeUI> createState() => _NoteHomeUIState();
+}
 
-  Future<Database?> get db async {
-    niranjandb ??= await _initDb();
-    return niranjandb;
+class _NoteHomeUIState extends State<NoteHomeUI> {
+  ///////////////////////////insert database/////////////////////////////
+
+  insertdatabase(tittle, description) {
+    NoteDbHelper.instance.insert({
+      NoteDbHelper.coltittle: tittle,
+      NoteDbHelper.coldescription: description,
+      NoteDbHelper.coldate: DateTime.now().toString(),
+    });
   }
 
-  _initDb() async {
-    Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = join(documentsDirectory.path, dbname);
-    return await openDatabase(path, version: dvversion, onCreate: _oncreate);
+  updatedatabase(snap, index, tittle, description) {
+    NoteDbHelper.instance.update({
+      NoteDbHelper.colid: snap.data![index][NoteDbHelper.colid],
+      NoteDbHelper.coltittle: tittle,
+      NoteDbHelper.coldescription: description,
+      NoteDbHelper.coldate: DateTime.now().toString(),
+    });
   }
 
-  _oncreate(Database db, int version) async {
-    await db.execute('''
-    CREATE TABLE $tablename(
-    $colid INTEGER PRIMARY KEY AUTOINCREMENT,
-    $coltittle TEXT NOT NULL,
-    $coldescription TEXT NOT NULL,
-    $coldate TEXT NOT NULL
-    )
-    ''');
+  deletedatabase(snap, index) {
+    NoteDbHelper.instance.delete(snap.data![index][NoteDbHelper.colid]);
   }
 
-  Future<int> insert(Map<String, dynamic> row) async {
-    Database? db = await instance.db;
-    return await db!.insert(tablename, row);
-  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+          toolbarHeight: MediaQuery.of(context).size.height * 0.07,
+          title: const Text('Note App')),
+      body: Padding(
+        padding: EdgeInsets.all(8),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          child: FutureBuilder(
+            future: NoteDbHelper.instance.queryAll(),
+            builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snap) {
+              if (snap.hasData) {
+                return ListView.builder(
+                  itemCount: snap.data!.length,
+                  itemBuilder: (context, index) {
+                    return Dismissible(
+                      key: UniqueKey(),
+                      onDismissed: (direction) {
+                        deletedatabase(snap, index);
+                      },
+                      background: Container(
+                          color: Colors.red, child: const Icon(Icons.delete)),
+                      child: Card(
+                        child: ListTile(
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (context) {
+                                return DescriptionNote(
+                                    tittle: snap.data![index]
+                                        [NoteDbHelper.coltittle],
+                                    description: snap.data![index]
+                                        [NoteDbHelper.coldescription]);
+                              },
+                            ));
 
-  Future<List<Map<String, dynamic>>> queryAll() async {
-    Database? db = await instance.db;
-    return await db!.query(tablename);
-  }
-
-  Future<int> update(Map<String, dynamic> row) async {
-    Database? db = await instance.db;
-    int id = row[colid];
-    return await db!
-        .update(tablename, row, where: '$colid = ?', whereArgs: [id]);
-  }
-
-  Future<int> delete(int id) async {
-    Database? db = await instance.db;
-    return await db!.delete(tablename, where: '$colid = ?', whereArgs: [id]);
-  }
-
-  Future close() async {
-    Database? db = await instance.db;
-    db!.close();
+                            //
+                          },
+                          leading: IconButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    var tittle = '';
+                                    var description = '';
+                                    return AlertDialog(
+                                      title: const Text('Edit Note'),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextField(
+                                            onChanged: (value) {
+                                              tittle = value;
+                                            },
+                                            decoration: InputDecoration(
+                                                hintText: snap.data![index]
+                                                    [NoteDbHelper.coltittle]),
+                                          ),
+                                          TextField(
+                                              onChanged: (value) {
+                                                description = value;
+                                              },
+                                              decoration: InputDecoration(
+                                                  hintText: snap.data![index][
+                                                      NoteDbHelper
+                                                          .coldescription])),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                            child: const Text('Cancel')),
+                                        TextButton(
+                                            onPressed: () {
+                                              updatedatabase(snap, index,
+                                                  tittle, description);
+                                              Navigator.pop(context);
+                                            },
+                                            child: const Text('Save'))
+                                      ],
+                                    );
+                                  },
+                                );
+                                //
+                              },
+                              icon: Icon(Icons.edit)),
+                          title:
+                              Text(snap.data![index][NoteDbHelper.coltittle]),
+                          subtitle: Text(
+                              snap.data![index][NoteDbHelper.coldescription]),
+                          trailing: Text(snap.data![index][NoteDbHelper.coldate]
+                              .toString()
+                              .substring(0, 10)),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              } else {
+                return Center(
+                    // child: CircularProgressIndicator(),
+                    );
+              }
+            },
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) {
+              var tittle = '';
+              var description = '';
+              return AlertDialog(
+                title: const Text('Add Note'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                        onChanged: (value) {
+                          tittle = value;
+                        },
+                        decoration: const InputDecoration(hintText: 'Title')),
+                    TextField(
+                        onChanged: (value) {
+                          description = value;
+                        },
+                        decoration:
+                            const InputDecoration(hintText: 'Description')),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Cancel')),
+                  TextButton(
+                      onPressed: () {
+                        insertdatabase(tittle, description);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Save'))
+                ],
+              );
+            },
+          );
+        },
+        child: Icon(Icons.add),
+      ),
+    );
   }
 }
+
+//  insertdatabase();
+//                         Navigator.pop(context);
