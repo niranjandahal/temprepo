@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 
-Widget TextFieldUi(lbltext, hnttxt, icn, obstxt) {
-  return TextField(
-    obscureText: obstxt,
-    style: TextStyle(color: Colors.white.withOpacity(0.5)),
-    decoration: InputDecoration(
-      labelText: lbltext,
-      fillColor: Colors.black.withOpacity(0.3),
-      filled: true,
-      prefixIcon: Icon(
-        icn,
-        color: Colors.grey.withOpacity(0.5),
+import 'screens/NoteHomeUi.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
       ),
-      hintText: hnttxt,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ),
-  );
+      home: NoteHomeUI(),
+    );
+  }
 }
